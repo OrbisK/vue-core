@@ -325,10 +325,13 @@ describe('reactivity/effect/scope', () => {
   })
 
   test('removing a watcher while stopping its effectScope', async () => {
+    const abortFn = vi.fn()
     const count = ref(0)
     const scope = effectScope()
     let watcherCalls = 0
     let cleanupCalls = 0
+
+    scope.signal.addEventListener('abort', abortFn)
 
     scope.run(() => {
       const stop1 = watch(count, () => {
@@ -361,7 +364,8 @@ describe('reactivity/effect/scope', () => {
     expect(cleanupCalls).toBe(1)
 
     expect(getEffectsCount(scope)).toBe(0)
-    expect(scope.cleanupsLength).toBe(0)
+    expect(abortFn).toHaveBeenCalledTimes(1)
+    expect(scope.signal.aborted).toBe(true)
   })
 
   test('signal', () => {
